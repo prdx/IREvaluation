@@ -26,12 +26,12 @@ def build_qrel(qrel_data):
     """
     qrel = {}
     for line in qrel_data:
-        (q_id, author, doc_id, relevance) = line.split("\t")
+        q_id, author, doc_id, relevance = line.split()
         try:
-            qrel[q_id][doc_id] = relevance
+            qrel[q_id][doc_id] = int(relevance)
         except KeyError:
             qrel[q_id] = {}
-            qrel[q_id][doc_id] = relevance 
+            qrel[q_id][doc_id] = int(relevance) 
     return qrel
 
 def build_num_rel(qrel):
@@ -41,17 +41,21 @@ def build_num_rel(qrel):
     num_rel = {}
     for topic in qrel:
         for doc in qrel[topic]:
-            if qrel[topic][doc] > 0:
-                try:
+            if topic in num_rel:
+                if qrel[topic][doc] > 0:
                     num_rel[topic] += 1
-                except KeyError:
+            else:
+                if qrel[topic][doc] > 0:
+                    num_rel[topic] = 1
+                else:
                     num_rel[topic] = 0
+
     return num_rel
 
 def build_trec(trec_data):
     trec = {}
     for line in trec_data:
-        (q_id, author, doc_id, rank, score, exp) = line.split()
+        q_id, author, doc_id, rank, score, exp = line.split()
         try:
             trec[q_id][doc_id] = score
         except KeyError:
@@ -59,39 +63,39 @@ def build_trec(trec_data):
             trec[q_id][doc_id] = score
     return trec
 
-def eval_print(qid, ret, rel, rel_ret, prec_at_recalls,
-        avg_prec, prec_at_cutoffs, rec_at_cutoffs, f1_at_cutoffs, rp, dcg):
+def eval_print(qid, ret, rel, rel_ret,
+        prec_at_recalls, avg_prec, prec_at_cutoffs, rp):
     print("Queryid (num):\t{0}".format(qid))
     print("Total number of documents over all queries")
     print("\tRetrieved:\t{0}".format(ret))
     print("\tRelevant:\t{0}".format(rel))
     print("\tRel_ret:\t{0}".format(rel_ret))
     print("Interpolated Recall - Precision Averages:")
-    print("\tat 0.00\t\t{0}".format(prec_at_recalls[0]))
-    print("\tat 0.10\t\t{0}".format(prec_at_recalls[1]))
-    print("\tat 0.20\t\t{0}".format(prec_at_recalls[2]))
-    print("\tat 0.30\t\t{0}".format(prec_at_recalls[3]))
-    print("\tat 0.40\t\t{0}".format(prec_at_recalls[4]))
-    print("\tat 0.50\t\t{0}".format(prec_at_recalls[5]))
-    print("\tat 0.60\t\t{0}".format(prec_at_recalls[6]))
-    print("\tat 0.70\t\t{0}".format(prec_at_recalls[7]))
-    print("\tat 0.80\t\t{0}".format(prec_at_recalls[8]))
-    print("\tat 0.90\t\t{0}".format(prec_at_recalls[9]))
-    print("\tat 1.00\t\t{0}".format(prec_at_recalls[10]))
+    print("\tat 0.00\t\t{0:.4f}".format(prec_at_recalls[0]))
+    print("\tat 0.10\t\t{0:.4f}".format(prec_at_recalls[1]))
+    print("\tat 0.20\t\t{0:.4f}".format(prec_at_recalls[2]))
+    print("\tat 0.30\t\t{0:.4f}".format(prec_at_recalls[3]))
+    print("\tat 0.40\t\t{0:.4f}".format(prec_at_recalls[4]))
+    print("\tat 0.50\t\t{0:.4f}".format(prec_at_recalls[5]))
+    print("\tat 0.60\t\t{0:.4f}".format(prec_at_recalls[6]))
+    print("\tat 0.70\t\t{0:.4f}".format(prec_at_recalls[7]))
+    print("\tat 0.80\t\t{0:.4f}".format(prec_at_recalls[8]))
+    print("\tat 0.90\t\t{0:.4f}".format(prec_at_recalls[9]))
+    print("\tat 1.00\t\t{0:.4f}".format(prec_at_recalls[10]))
     print("Average precision (non-interpolated) for all rel docs(averaged over queries)")
-    print("\t\t\t{0}".format(avg_prec))
+    print("\t\t\t{0:.4f}".format(avg_prec))
     print("Precision:")
-    print("  At    5 docs:   {0}".format(prec_at_cutoffs[0]))
-    print("  At   10 docs:   {0}".format(prec_at_cutoffs[1]))
-    print("  At   15 docs:   {0}".format(prec_at_cutoffs[2]))
-    print("  At   20 docs:   {0}".format(prec_at_cutoffs[3]))
-    print("  At   30 docs:   {0}".format(prec_at_cutoffs[4]))
-    print("  At  100 docs:   {0}".format(prec_at_cutoffs[5]))
-    print("  At  200 docs:   {0}".format(prec_at_cutoffs[6]))
-    print("  At  500 docs:   {0}".format(prec_at_cutoffs[7]))
-    print("  At 1000 docs:   {0}".format(prec_at_cutoffs[8]))
+    print("  At    5 docs:   {0:.4f}".format(prec_at_cutoffs[0]))
+    print("  At   10 docs:   {0:.4f}".format(prec_at_cutoffs[1]))
+    print("  At   15 docs:   {0:.4f}".format(prec_at_cutoffs[2]))
+    print("  At   20 docs:   {0:.4f}".format(prec_at_cutoffs[3]))
+    print("  At   30 docs:   {0:.4f}".format(prec_at_cutoffs[4]))
+    print("  At  100 docs:   {0:.4f}".format(prec_at_cutoffs[5]))
+    print("  At  200 docs:   {0:.4f}".format(prec_at_cutoffs[6]))
+    print("  At  500 docs:   {0:.4f}".format(prec_at_cutoffs[7]))
+    print("  At 1000 docs:   {0:.4f}".format(prec_at_cutoffs[8]))
     print("R-Precision (precision after R (= num_rel for a query) docs retrieved):")
-    print("    Exact:        {0}".format(rp))
+    print("    Exact:        {0:.4f}".format(rp))
 
 def main(qrels, trec, print_all_queries):
     qrel = read_file(qrels)
@@ -102,6 +106,13 @@ def main(qrels, trec, print_all_queries):
 
     # Variable initialization
     num_topics = 0
+    tot_num_ret = 0
+    tot_num_rel = 0
+    tot_num_rel_ret = 0
+    sum_avg_prec = 0.0
+    sum_r_prec = 0.0
+    sum_prec_at_cutoffs = {}
+    sum_prec_at_recalls = {}
 
     # Now let's process the data from trec_file to get results.
     # TODO: Sort the trec based on the topic
@@ -111,7 +122,8 @@ def main(qrels, trec, print_all_queries):
 
         num_topics += 1         # Processing another topic...
         href = trec[topic]      # Processing another topic...
-        prec_list = ()          # New list of precisions.
+        prec_list = []          # New list of precisions.
+        rec_list = []
         num_prec_list = 1000    # Last index is 1000.
 
         num_ret = 0             # Initialize number retrieved.
@@ -145,12 +157,13 @@ def main(qrels, trec, print_all_queries):
 
         final_recall = num_rel_ret / num_rel[topic]
 
-        for i in range(num_ret + 1, 1001):
+        for i in range(num_ret, 1001):
             prec_list.append(num_rel_ret / i)
             rec_list.append(final_recall)
 
         # Now calculate precision at document cutoff levels and R-precision.
         # Note that arrays are indexed starting at 0...
+        
 
         prec_at_cutoffs = []
 
@@ -205,10 +218,16 @@ def main(qrels, trec, print_all_queries):
         tot_num_rel_ret += num_rel_ret
 
         for i in range(len(cutoffs)):
-            sum_prec_at_cutoffs[i] += prec_at_cutoffs[i]
+            try:
+                sum_prec_at_cutoffs[i] += prec_at_cutoffs[i]
+            except KeyError:
+                sum_prec_at_cutoffs[i] = prec_at_cutoffs[i]
 
         for i in range(len(recalls)):
-            sum_prec_at_recalls[i] += prec_at_recalls[i]
+            try:
+                sum_prec_at_recalls[i] += prec_at_recalls[i]
+            except KeyError:
+                sum_prec_at_recalls[i] = prec_at_recalls[i]
 
         sum_avg_prec += avg_prec
         sum_r_prec += r_prec
@@ -218,16 +237,16 @@ def main(qrels, trec, print_all_queries):
     avg_prec_at_recalls = []
 
     for i in range(len(cutoffs)):
-        avg_prec_at_cutoffs[i] = sum_prec_at_cutoffs[i] / num_topics
+        avg_prec_at_cutoffs.append(sum_prec_at_cutoffs[i] / num_topics)
 
     for i in range(len(recalls)):
-        avg_prec_at_recalls[i] = sum_prec_at_recalls[i] / num_topics
+        avg_prec_at_recalls.append(sum_prec_at_recalls[i] / num_topics)
 
     mean_avg_prec = sum_avg_prec / num_topics
     avg_r_prec = sum_r_prec / num_topics
 
-    eval_print(num_topics, tot_num_ret, tot_num_rel,
-            tot_num_rel_ret, avg_prec_at_recalls, mean_avg_prec, avg_prec_at_cutoffs,
+    eval_print(num_topics, tot_num_ret, tot_num_rel, tot_num_rel_ret,
+            avg_prec_at_recalls, mean_avg_prec, avg_prec_at_cutoffs,
             avg_r_prec)
 
 if __name__ == '__main__':

@@ -1,4 +1,5 @@
 import argparse
+import texttable as tt
 
 # Initialize some arrays.
 recalls = (0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0)
@@ -65,6 +66,12 @@ def build_trec(trec_data):
 
 def eval_print(qid, ret, rel, rel_ret,
         prec_at_recalls, avg_prec, prec_at_cutoffs, rp):
+    tab = tt.Texttable()
+    headers = ["At docs", "Precision"]
+    tab.set_deco(tab.HEADER)
+    tab.header(headers)
+    tab.set_cols_dtype(["t", "f"])
+    tab.set_precision(4)
     print("Queryid (num):\t{0}".format(qid))
     print("Total number of documents over all queries")
     print("\tRetrieved:\t{0}".format(ret))
@@ -84,16 +91,12 @@ def eval_print(qid, ret, rel, rel_ret,
     print("\tat 1.00\t\t{0:.4f}".format(prec_at_recalls[10]))
     print("Average precision (non-interpolated) for all rel docs(averaged over queries)")
     print("\t\t\t{0:.4f}".format(avg_prec))
-    print("Precision:")
-    print("  At    5 docs:   {0:.4f}".format(prec_at_cutoffs[0]))
-    print("  At   10 docs:   {0:.4f}".format(prec_at_cutoffs[1]))
-    print("  At   15 docs:   {0:.4f}".format(prec_at_cutoffs[2]))
-    print("  At   20 docs:   {0:.4f}".format(prec_at_cutoffs[3]))
-    print("  At   30 docs:   {0:.4f}".format(prec_at_cutoffs[4]))
-    print("  At  100 docs:   {0:.4f}".format(prec_at_cutoffs[5]))
-    print("  At  200 docs:   {0:.4f}".format(prec_at_cutoffs[6]))
-    print("  At  500 docs:   {0:.4f}".format(prec_at_cutoffs[7]))
-    print("  At 1000 docs:   {0:.4f}".format(prec_at_cutoffs[8]))
+    print("Precision, Recall, F1:")
+    
+    for row in zip(cutoffs, prec_at_cutoffs):
+        tab.add_row(row)
+    s = tab.draw()
+    print(s)
     print("R-Precision (precision after R (= num_rel for a query) docs retrieved):")
     print("    Exact:        {0:.4f}".format(rp))
 
@@ -182,7 +185,10 @@ def main(qrels, trec, print_all_queries):
             int_num_rel = int(num_rel[topic])               # Integer part.
             frac_num_rel = num_rel[topic] - int_num_rel     # Fractional part.
 
-            r_prec = (1 - frac_num_rel) * prec_list[int_num_rel] + frac_num_rel * prec_list[int_num_rel + 1] if frac_num_rel > 0 else prec_list[int_num_rel]
+            r_prec = (1 - frac_num_rel) * \
+                    prec_list[int_num_rel] + \
+                    frac_num_rel * \
+                    prec_list[int_num_rel + 1] if frac_num_rel > 0 else prec_list[int_num_rel]
 
         # Now calculate interpolated precisions...
 

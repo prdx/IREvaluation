@@ -1,4 +1,5 @@
 import argparse
+import math
 import texttable as tt
 
 # Initialize some arrays.
@@ -65,7 +66,8 @@ def build_trec(trec_data):
     return trec
 
 def eval_print(qid, ret, rel, rel_ret,
-        prec_at_recalls, avg_prec, prec_at_cutoffs, rec_at_cutoffs, f1_at_cutoffs, rp):
+        prec_at_recalls, avg_prec, prec_at_cutoffs, rec_at_cutoffs, f1_at_cutoffs,
+        rp, nDCG, CG = 0, DCG = 0):
     tab = tt.Texttable()
     headers = ["At docs", "Precision", "Recall", "F1"]
     tab.set_deco(tab.HEADER)
@@ -77,6 +79,8 @@ def eval_print(qid, ret, rel, rel_ret,
     print("\tRetrieved:\t{0}".format(ret))
     print("\tRelevant:\t{0}".format(rel))
     print("\tRel_ret:\t{0}".format(rel_ret))
+    print("\tCG:\t{0}".format(CG))
+    print("\tDCG:\t{0}".format(CG))
     print("Interpolated Recall - Precision Averages:")
     print("\tat 0.00\t\t{0:.4f}".format(prec_at_recalls[0]))
     print("\tat 0.10\t\t{0:.4f}".format(prec_at_recalls[1]))
@@ -91,6 +95,8 @@ def eval_print(qid, ret, rel, rel_ret,
     print("\tat 1.00\t\t{0:.4f}".format(prec_at_recalls[10]))
     print("Average precision (non-interpolated) for all rel docs(averaged over queries)")
     print("\t\t\t{0:.4f}".format(avg_prec))
+    print("Average nDCG for all rel docs(averaged over queries)")
+    print("\t\t\t{0:.4f}".format(nDCG))
     print("Precision, Recall, F1:")
     
     for row in zip(cutoffs, prec_at_cutoffs, rec_at_cutoffs, f1_at_cutoffs):
@@ -99,6 +105,12 @@ def eval_print(qid, ret, rel, rel_ret,
     print(s)
     print("R-Precision (precision after R (= num_rel for a query) docs retrieved):")
     print("    Exact:        {0:.4f}".format(rp))
+
+def dcg(relevance_vector):
+    dcg_score = 0
+    for i, val in enumerate(relevance_vector):
+        dcg_score += ((2 ** val) - 1) / math.log(i + 2) # Index starts at 0
+    return dcg_score
 
 def main(qrels, trec, print_all_queries):
     qrel = read_file(qrels)
@@ -114,11 +126,13 @@ def main(qrels, trec, print_all_queries):
     tot_num_rel_ret = 0
     sum_avg_prec = 0.0
     sum_r_prec = 0.0
+    sum_nDCG = 0.0
     sum_prec_at_cutoffs = {}
     sum_rec_at_cutoffs = {}
     sum_recall_at_cutoffs = {}
     sum_f1_at_cutoffs = {}
     sum_prec_at_recalls = {}
+
 
     # Now let's process the data from trec_file to get results.
     # TODO: Sort the trec based on the topic
@@ -136,6 +150,8 @@ def main(qrels, trec, print_all_queries):
         num_rel_ret = 0         # Initialize number relevant retrieved.
         sum_prec = 0            # Initialize sum precision.
 
+        relevance_vector = []
+
         # Now sort doc IDs based on scores and calculate stats.
         # Note:  Break score ties lexicographically based on doc IDs.
         # Note2: Explicitly quit after 1000 docs to conform to TREC while still
@@ -146,11 +162,12 @@ def main(qrels, trec, print_all_queries):
 
             if doc_id in qrel[topic]:
                 rel = 1 if qrel[topic][doc_id] > 0 else 0   # Doc's relevance.
-                # TODO: DCG
                 sum_prec += rel * (1 + num_rel_ret) / num_ret
                 num_rel_ret += rel
-            # else:
-                # TODO: DCG
+                # DCG
+                relevance_vector.append(qrel[topic][doc_id])
+            else:
+                relevance_vector.append(0)
 
             prec_list.append(num_rel_ret / num_ret)
             rec_list.append(num_rel_ret / num_rel[topic])
@@ -167,9 +184,19 @@ def main(qrels, trec, print_all_queries):
             prec_list.append(num_rel_ret / i)
             rec_list.append(final_recall)
 
+        # Calculate CG
+        CG = sum(relevance_vector)
+        # Calculate DCG
+        DCG = dcg(relevance_vector) 
+        # Calculate IDCG
+        sorted_relevance_vector = sorted(relevance_vector, reverse=True)
+        IDCG = dcg(sorted_relevance_vector)
+        # Calculate nDCG
+        nDCG = DCG / IDCG
+        
         # Now calculate precision at document cutoff levels and R-precision.
         # Note that arrays are indexed starting at 0...
-        
+    
 
         prec_at_cutoffs = []
         rec_at_cutoffs = []
@@ -258,6 +285,7 @@ def main(qrels, trec, print_all_queries):
 
         sum_avg_prec += avg_prec
         sum_r_prec += r_prec
+        sum_nDCG += nDCG
 
     # Now calculate summary stats.
     avg_prec_at_cutoffs = []
@@ -275,10 +303,11 @@ def main(qrels, trec, print_all_queries):
 
     mean_avg_prec = sum_avg_prec / num_topics
     avg_r_prec = sum_r_prec / num_topics
+    avg_nDCG = sum_nDCG / num_topics
 
     eval_print(num_topics, tot_num_ret, tot_num_rel, tot_num_rel_ret,
             avg_prec_at_recalls, mean_avg_prec, avg_prec_at_cutoffs, avg_rec_at_cutoffs, avg_f1_at_cutoffs,
-            avg_r_prec)
+            avg_r_prec, avg_nDCG)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

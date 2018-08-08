@@ -65,12 +65,12 @@ def build_trec(trec_data):
     return trec
 
 def eval_print(qid, ret, rel, rel_ret,
-        prec_at_recalls, avg_prec, prec_at_cutoffs, rp):
+        prec_at_recalls, avg_prec, prec_at_cutoffs, rec_at_cutoffs, f1_at_cutoffs, rp):
     tab = tt.Texttable()
-    headers = ["At docs", "Precision"]
+    headers = ["At docs", "Precision", "Recall", "F1"]
     tab.set_deco(tab.HEADER)
     tab.header(headers)
-    tab.set_cols_dtype(["t", "f"])
+    tab.set_cols_dtype(["t", "f", "f", "f"])
     tab.set_precision(4)
     print("Queryid (num):\t{0}".format(qid))
     print("Total number of documents over all queries")
@@ -93,7 +93,7 @@ def eval_print(qid, ret, rel, rel_ret,
     print("\t\t\t{0:.4f}".format(avg_prec))
     print("Precision, Recall, F1:")
     
-    for row in zip(cutoffs, prec_at_cutoffs):
+    for row in zip(cutoffs, prec_at_cutoffs, rec_at_cutoffs, f1_at_cutoffs):
         tab.add_row(row)
     s = tab.draw()
     print(s)
@@ -115,6 +115,9 @@ def main(qrels, trec, print_all_queries):
     sum_avg_prec = 0.0
     sum_r_prec = 0.0
     sum_prec_at_cutoffs = {}
+    sum_rec_at_cutoffs = {}
+    sum_recall_at_cutoffs = {}
+    sum_f1_at_cutoffs = {}
     sum_prec_at_recalls = {}
 
     # Now let's process the data from trec_file to get results.
@@ -169,11 +172,19 @@ def main(qrels, trec, print_all_queries):
         
 
         prec_at_cutoffs = []
+        rec_at_cutoffs = []
+        f1_at_cutoffs = []
 
         for cutoff in cutoffs:
             prec_at_cutoffs.append(prec_list[cutoff])
+            rec_at_cutoffs.append(rec_list[cutoff])
 
-        # TODO: Calculate F1
+            # To avoid division by zero when calculating F1
+            if prec_at_cutoffs[-1] != 0 and rec_at_cutoffs[-1] != 0:
+                f1_at_cutoffs.append((2 * prec_at_cutoffs[-1] * rec_at_cutoffs[-1] / (prec_at_cutoffs[-1] + rec_at_cutoffs[-1])))
+            else:
+                f1_at_cutoffs.append(0)
+
 
         # Now calculate R-precision.  We'll be a bit anal here and
         # actually interpolate if the number of relevant docs is not
@@ -229,6 +240,16 @@ def main(qrels, trec, print_all_queries):
             except KeyError:
                 sum_prec_at_cutoffs[i] = prec_at_cutoffs[i]
 
+            try:
+                sum_rec_at_cutoffs[i] += rec_at_cutoffs[i]
+            except KeyError:
+                sum_rec_at_cutoffs[i] = rec_at_cutoffs[i]
+
+            try:
+                sum_f1_at_cutoffs[i] += f1_at_cutoffs[i]
+            except KeyError:
+                sum_f1_at_cutoffs[i] = f1_at_cutoffs[i]
+
         for i in range(len(recalls)):
             try:
                 sum_prec_at_recalls[i] += prec_at_recalls[i]
@@ -240,10 +261,14 @@ def main(qrels, trec, print_all_queries):
 
     # Now calculate summary stats.
     avg_prec_at_cutoffs = []
+    avg_rec_at_cutoffs = []
+    avg_f1_at_cutoffs = []
     avg_prec_at_recalls = []
 
     for i in range(len(cutoffs)):
         avg_prec_at_cutoffs.append(sum_prec_at_cutoffs[i] / num_topics)
+        avg_rec_at_cutoffs.append(sum_rec_at_cutoffs[i] / num_topics)
+        avg_f1_at_cutoffs.append(sum_f1_at_cutoffs[i] / num_topics)
 
     for i in range(len(recalls)):
         avg_prec_at_recalls.append(sum_prec_at_recalls[i] / num_topics)
@@ -252,7 +277,7 @@ def main(qrels, trec, print_all_queries):
     avg_r_prec = sum_r_prec / num_topics
 
     eval_print(num_topics, tot_num_ret, tot_num_rel, tot_num_rel_ret,
-            avg_prec_at_recalls, mean_avg_prec, avg_prec_at_cutoffs,
+            avg_prec_at_recalls, mean_avg_prec, avg_prec_at_cutoffs, avg_rec_at_cutoffs, avg_f1_at_cutoffs,
             avg_r_prec)
 
 if __name__ == '__main__':

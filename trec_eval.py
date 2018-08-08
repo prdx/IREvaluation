@@ -253,8 +253,8 @@ def main(qrels, trec, print_all_queries):
         
         # Print stats on a per query basis if requested.
         if print_all_queries:
-            eval_print(topic, num_ret, num_rel[topic],
-                    num_rel_ret, prec_at_recalls, avg_prec, prec_at_cutoffs, r_prec)
+            eval_print(topic, num_ret, num_rel[topic], num_rel_ret,
+                    prec_at_recalls, avg_prec, prec_at_cutoffs, rec_at_cutoffs, f1_at_cutoffs, r_prec, nDCG, CG, DCG)
 
         # Now update running sums for overall stats.
         tot_num_ret += num_ret

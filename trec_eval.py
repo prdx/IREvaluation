@@ -1,6 +1,7 @@
 import argparse
 import math
 import texttable as tt
+from collections import Counter
 
 # Initialize some arrays.
 recalls = (0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0)
@@ -17,6 +18,17 @@ def read_file(filename):
         print(e)
         raise IOError
 
+def pick_relevance(relevances):
+    if len(relevances) < 3:
+        return max(relevances)
+    if len(relevances) == 3:
+        c = Counter(relevances)
+        if len(c.most_common()) == 3:
+            return max(relevances)
+        else:
+            value, count = c.most_common()[0]
+            return value
+
 def build_qrel(qrel_data):
     """ %qrel is a hash whose keys are topic IDs and whose values are
     references to hashes.  Each referenced hash has keys which are
@@ -30,10 +42,10 @@ def build_qrel(qrel_data):
     for line in qrel_data:
         q_id, author, doc_id, relevance = line.split()
         try:
-            qrel[q_id][doc_id] = int(relevance)
+            qrel[q_id][doc_id] = int(pick_relevance(relevance.split(",")))
         except KeyError:
             qrel[q_id] = {}
-            qrel[q_id][doc_id] = int(relevance) 
+            qrel[q_id][doc_id] = int(pick_relevance(relevance.split(",")))
     return qrel
 
 def build_num_rel(qrel):

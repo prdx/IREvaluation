@@ -1,6 +1,7 @@
 import argparse
 import math
 import texttable as tt
+import matplotlib.pyplot as plt
 from collections import Counter
 
 # Initialize some arrays.
@@ -17,6 +18,15 @@ def read_file(filename):
     except Exception as e:
         print(e)
         raise IOError
+
+def draw(query_id, prec_at_recalls):
+    plt.title("Precision-Recall Curves")
+    plt.xlabel("Recall")
+    plt.ylabel("Precision")
+    plt.grid(True)
+    plt.plot(recalls, prec_at_recalls)
+    plt.savefig(query_id)
+    plt.close()
 
 def pick_relevance(relevances):
     if len(relevances) < 3:
@@ -267,6 +277,9 @@ def main(qrels, trec, print_all_queries):
         if print_all_queries:
             eval_print(topic, num_ret, num_rel[topic], num_rel_ret,
                     prec_at_recalls, avg_prec, prec_at_cutoffs, rec_at_cutoffs, f1_at_cutoffs, r_prec, nDCG, CG, DCG)
+
+        # Draw the plot
+        draw(topic, prec_at_recalls)
 
         # Now update running sums for overall stats.
         tot_num_ret += num_ret

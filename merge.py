@@ -39,31 +39,35 @@ def store_to_hash(q_id, author, doc_id, relevance):
     global grades_karan
     global grades_monica
 
+
     if author == "bagus":
         if q_id in grades_bagus:
-            grades_bagus[q_id][doc_id] = [relevance]
+            grades_bagus[q_id][doc_id] = relevance
         else:
             grades_bagus[q_id] = {}
-            grades_bagus[q_id][doc_id] = [relevance]
+            grades_bagus[q_id][doc_id] = relevance
 
-    if author == "karan":
+    elif author == "karan":
         if q_id in grades_karan:
-            grades_karan[q_id][doc_id] = [relevance]
+            grades_karan[q_id][doc_id] = relevance
         else:
             grades_karan[q_id] = {}
-            grades_karan[q_id][doc_id] = [relevance]
+            grades_karan[q_id][doc_id] = relevance
 
-    if author == "monica":
+    elif author == "monica":
         if q_id in grades_monica:
-            grades_monica[q_id][doc_id] = [relevance]
+            grades_monica[q_id][doc_id] = relevance
         else:
             grades_monica[q_id] = {}
-            grades_monica[q_id][doc_id] = [relevance]
+            grades_monica[q_id][doc_id] = relevance
+    else:
+        print("Not found: {0}".format(author))
+
+
 
 def split_line(line):
     try:
         q_id, author, doc_id, relevance = line.split()
-        data = {q_id: {doc_id: relevance}}
         store_to_hash(q_id, author.lower(), doc_id, relevance)
     except Exception as e:
         print(e)
@@ -74,8 +78,10 @@ def write_to_text(name, data):
             string = "{0}\tBagus\t{1}\t{2}\n".format(name, key, ",".join(data[key]))
             q.write(string)
 
-for bagus, karan, monica in zip(bagus_file, karan_file, monica_file):
-    with open(grades_dir + bagus, "r") as b, open(grades_dir + karan, "r") as k, open(grades_dir + monica, "r") as m:
+names = ["Bagus.txt", "Karan.txt", "Monica.txt"]
+codes = ["152601", "152602", "152603"]
+for i in range(3):
+    with open(grades_dir + codes[i] + "-" + names[0], "r") as b, open(grades_dir + codes[i] + "-" + names[1], "r") as k, open(grades_dir + codes[i] + "-" + names[2], "r") as m:
         text_bagus = b.read()
         text_karan = k.read()
         text_monica = m.read()
@@ -83,19 +89,29 @@ for bagus, karan, monica in zip(bagus_file, karan_file, monica_file):
     lines_bagus = text_bagus.split("\n")
     lines_karan = text_karan.split("\n")
     lines_monica = text_monica.split("\n")
+    print("Lines: {0} for {1}".format(len(lines_bagus), "bagus" + codes[i]))
+    print("Lines: {0} for {1}".format(len(lines_monica), "monica" + codes[i]))
+    print("Lines: {0} for {1}".format(len(lines_karan), "karan" + codes[i]))
 
     for line_bagus, line_karan, line_monica in zip(lines_bagus, lines_karan, lines_monica):
         split_line(line_bagus)
         split_line(line_karan)
         split_line(line_monica)
 
+
 grades_152601 = grades_bagus["152601"]
-grades_152601 = combine_dicts(grades_152601, grades_karan["152601"])
+grades_152601 = combine_dicts(grades_bagus["152601"], grades_karan["152601"])
 grades_152601 = combine_dicts(grades_152601, grades_monica["152601"])
 
 grades_152602 = grades_bagus["152602"]
-grades_152602 = combine_dicts(grades_152602, grades_karan["152602"])
+grades_152602 = combine_dicts(grades_bagus["152602"], grades_karan["152602"])
 grades_152602 = combine_dicts(grades_152602, grades_monica["152602"])
+
+grades_152603 = grades_bagus["152603"]
+grades_152603 = combine_dicts(grades_bagus["152603"], grades_karan["152603"])
+grades_152603 = combine_dicts(grades_152603, grades_monica["152603"])
 
 write_to_text("152601", grades_152601)
 write_to_text("152602", grades_152602)
+write_to_text("152603", grades_152603)
+# difference_check()

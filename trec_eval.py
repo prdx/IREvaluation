@@ -102,7 +102,7 @@ def eval_print(qid, ret, rel, rel_ret,
     print("\tRelevant:\t{0}".format(rel))
     print("\tRel_ret:\t{0}".format(rel_ret))
     print("\tCG:\t{0}".format(CG))
-    print("\tDCG:\t{0}".format(CG))
+    print("\tDCG:\t{0}".format(DCG))
     print("Interpolated Recall - Precision Averages:")
     print("\tat 0.00\t\t{0:.4f}".format(prec_at_recalls[0]))
     print("\tat 0.10\t\t{0:.4f}".format(prec_at_recalls[1]))
@@ -131,7 +131,7 @@ def eval_print(qid, ret, rel, rel_ret,
 def dcg(relevance_vector):
     dcg_score = 0
     for i, val in enumerate(relevance_vector):
-        dcg_score += ((2 ** val) - 1) / math.log(i + 2) # Index starts at 0
+        dcg_score += ((2 ** val) - 1) // math.log(i + 2) # Index starts at 0
     return dcg_score
 
 def main(qrels, trec, print_all_queries):
@@ -208,8 +208,10 @@ def main(qrels, trec, print_all_queries):
 
         # Calculate CG
         CG = sum(relevance_vector)
+        print(CG)
         # Calculate DCG
         DCG = dcg(relevance_vector) 
+        print(DCG)
         # Calculate IDCG
         sorted_relevance_vector = sorted(relevance_vector, reverse=True)
         IDCG = dcg(sorted_relevance_vector)

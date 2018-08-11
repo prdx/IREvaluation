@@ -157,7 +157,7 @@ def main(qrels, trec, print_all_queries):
 
 
     # Now let's process the data from trec_file to get results.
-    # TODO: Sort the trec based on the topic
+    # trec = {k: sorted(v, key=lambda kv: kv[1], reverse=True) for k, v in trec.items()}
     for topic in trec:
         # If no relevant docs, skip topic.
         if topic not in num_rel: continue
@@ -208,10 +208,9 @@ def main(qrels, trec, print_all_queries):
 
         # Calculate CG
         CG = sum(relevance_vector)
-        print(CG)
         # Calculate DCG
         DCG = dcg(relevance_vector) 
-        print(DCG)
+
         # Calculate IDCG
         sorted_relevance_vector = sorted(relevance_vector, reverse=True)
         IDCG = dcg(sorted_relevance_vector)
